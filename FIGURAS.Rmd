@@ -2,7 +2,9 @@
 title: "Modelado_Informe"
 author: "Paco"
 date: "2025-03-08"
-output: html_document
+output:
+  html_document: default
+  pdf_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -12,6 +14,7 @@ Empezamos recuperando información de todos los documentos en los analisis de GR
 
 ## Gráfico base
 Lo he utlizado para trabajar con las  tablas sus columnas y buscar un estilo adecuado de visualización. Ha sido el laboratorio para ir configurando parámetros para buscar mejores representaciones según el tipo de dato.
+
 ```{r}
 library(tidyverse)
 distancia <- read_table2("simu/298/distCa-Cb.xvg", col_names = FALSE)
@@ -27,7 +30,7 @@ ggplot(distancia, aes(x = tiempo, y = distancia)) +
   ) +
   theme_void(base_size = 12) +
   theme(
-    text = element_text(family = "Arial"),  # Fuente personalizada
+    text = element_text(family = "Arial"),  
     plot.title = element_text(size = 16, face = "bold", color = "darkgreen",hjust = 0.5,margin = margin(b = 30)),
      axis.title = element_text(size = 14, face = "bold", color = "darkred", margin = margin(t = 30, r = 30),hjust = 0.5),
     axis.text = element_text(size = 12,color = "darkgreen"),
@@ -37,17 +40,18 @@ ggplot(distancia, aes(x = tiempo, y = distancia)) +
 
 ```
 
+# Graficos comparativos para ambas temperaturas
 ```{r}
 library(tidyverse)
 
-# Leer los archivos de distancia para ambas temperaturas
+#lectura de ficheros
 dist_298 <- read_table2("simu/298/distCa-Cb.xvg", col_names = FALSE) %>%
-  mutate(temperatura = "298K")  # Agregar etiqueta de temperatura
+  mutate(temperatura = "298K")  
 
 dist_400 <- read_table2("simu/400/distCa-Cb.xvg", col_names = FALSE) %>%
-  mutate(temperatura = "400K")  # Agregar etiqueta de temperatura
+  mutate(temperatura = "400K")  # Agregar etiqueta de temperatura para luego poder separar y clasificar datos, sino es un lio.
 
-# Renombrar columnas
+# Renombro las columnas
 nombres <- c("tiempo", "distancia", "temperatura")
 colnames(dist_298) <- nombres
 colnames(dist_400) <- nombres
@@ -55,7 +59,7 @@ colnames(dist_400) <- nombres
 # Combinar ambos datasets
 distancia_total <- bind_rows(dist_298, dist_400)
 
-# Graficar ambas temperaturas en dos paneles separados (uno arriba del otro)
+# Grafico ambas temperaturas en dos paneles separados (uno arriba del otro) para eso uso facet_wrap()
 ggplot(distancia_total, aes(x = tiempo, y = distancia, color = temperatura)) +
   geom_line(size = 0.1) +
   labs(
@@ -65,17 +69,17 @@ ggplot(distancia_total, aes(x = tiempo, y = distancia, color = temperatura)) +
   ) +
   facet_wrap(~ temperatura, ncol = 1) +  # Divide en dos filas, una por temperatura
   theme_minimal(base_size = 12) +
-  theme(
+  theme(  #el resto de parametros son esteticos 
     text = element_text(family = "Arial"),
     plot.title = element_text(size = 16, face = "bold", color = "darkgreen", hjust = 0.5, margin = margin(b = 30)),
     axis.title = element_text(size = 14, face = "bold",color = "darkred", margin = margin(t = 30, r = 30), hjust = 0.5),
     axis.text = element_text(size = 12),
-    strip.text = element_text(size = 14, face = "bold", color = "white"), # Texto blanco en la etiqueta
-    strip.background = element_rect(fill = "darkgreen"),  # Fondo verde para la etiqueta del panel
+    strip.text = element_text(size = 14, face = "bold", color = "white"), 
+    strip.background = element_rect(fill = "darkgreen"), 
     panel.border = element_rect(color = "darkgreen", fill = NA, size = 1),
-    legend.position = "none"  # Oculta la leyenda ya que cada panel tiene su etiqueta
+    legend.position = "none"  
   ) +
-  scale_color_manual(values = c("298K" = "darkblue", "400K" = "darkred"))  # Definir colores
+  scale_color_manual(values = c("298K" = "darkblue", "400K" = "darkred"))  
 
 
 distancia_total %>%
@@ -106,20 +110,36 @@ ggplot(distancia_total, aes(x = temperatura, y = distancia, fill = temperatura))
   ) 
 
 ```
-## comparar espectros aplicando transformacda de furier
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# comparar espectros aplicando transformacda de furier
 ```{r}
 
-# 📌 6. Cálculo de la FFT con correcciones
 
-# Filtrar datos por temperatura
+# Filtro datos por temperatura
 dist_298_vals <- distancia_total %>% filter(temperatura == "298K")
 dist_400_vals <- distancia_total %>% filter(temperatura == "400K")
 
-# Calcular FFT tenemos la funcion de R fft que la calcula
+# Calcular FFT tenemos la funcion de R fft() que la calcula
 fft_298 <- fft(dist_298_vals$distancia) / length(dist_298_vals$distancia)  # Normalización
 fft_400 <- fft(dist_400_vals$distancia) / length(dist_400_vals$distancia)  # Normalización
 
-# Obtener frecuencias correctas
+# Hay que normalizar los valores
 n_298 <- length(dist_298_vals$tiempo)
 dt_298 <- mean(diff(dist_298_vals$tiempo))
 frecuencias_298 <- seq(0, 1 / (2 * dt_298), length.out = n_298 / 2)
@@ -128,30 +148,30 @@ n_400 <- length(dist_400_vals$tiempo)
 dt_400 <- mean(diff(dist_400_vals$tiempo))
 frecuencias_400 <- seq(0, 1 / (2 * dt_400), length.out = n_400 / 2)
 
-# Obtener la magnitud de la FFT y eliminar el primer valor (pico en frecuencia 0)
+# esto lo reutilice de la asignatura de bioimágenes
 magnitud_fft_298 <- Mod(fft_298)[2:(n_298/2)]
 magnitud_fft_400 <- Mod(fft_400)[2:(n_400/2)]
 frecuencias_298 <- frecuencias_298[2:length(frecuencias_298)]
 frecuencias_400 <- frecuencias_400[2:length(frecuencias_400)]
 
-# Ajustar la longitud mínima entre ambas series
+# Ajustamos la longitud mínima para plotear
 min_length <- min(length(frecuencias_298), length(frecuencias_400))
 
-# Recortar los datos a la misma longitud
+# Aislamos datos que tengan longitudes similares
 frecuencias_298 <- frecuencias_298[1:min_length]
 magnitud_fft_298 <- magnitud_fft_298[1:min_length]
 
 frecuencias_400 <- frecuencias_400[1:min_length]
 magnitud_fft_400 <- magnitud_fft_400[1:min_length]
 
-# Crear el tibble asegurando la misma longitud
+# Esto lo reuse de codigo viejo de bioimagenes
 fft_data <- tibble(
   Frecuencia = c(frecuencias_298, frecuencias_400),
   Amplitud = c(magnitud_fft_298, magnitud_fft_400),
   Temperatura = rep(c("298K", "400K"), each = min_length)
 )
 
-# 📌 7. Gráfico corregido del espectro de frecuencias
+#Grafico con ggplot
 ggplot(fft_data, aes(x = Frecuencia, y = Amplitud, color = Temperatura)) +
   geom_line(size = 1, alpha = 0.7) +
   scale_color_manual(values = c("298K" = "blue", "400K" = "red")) +
@@ -172,7 +192,23 @@ ggplot(fft_data, aes(x = Frecuencia, y = Amplitud, color = Temperatura)) +
 ```
 
 
-## Código para evaluar la temperatura de nuestro sistema.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Código para evaluar la temperatura de nuestro sistema.
 ```{r}
 library(tidyverse)
 xvg_temp <- read_table2("simu/298/temp.xvg", col_names = FALSE)
@@ -200,27 +236,36 @@ ggplot(data = xvg_temp, aes(x = temperatura)) +
   )
 
 ```
-## Para la evolución temporal de la temperatura
+
+
+
+
+
+
+
+
+
+# Para la evolución temporal de la temperatura
 
 ```{r}
 library(tidyverse)
 
-# Leer los archivos de distancia para ambas temperaturas
+# Leer los archivos de distancia para ambas temperaturas TODOS ESTOS PASOS SON SIMILARES A REPRESENTAICONES PREVIAS
 temp_298 <- read_table2("simu/298/temp.xvg", col_names = FALSE) %>%
-  mutate(temperatura = "298K")  # Agregar etiqueta de temperatura
+  mutate(temperatura = "298K")  
 
 temp_400 <- read_table2("simu/400/temp.xvg", col_names = FALSE) %>%
-  mutate(temperatura = "400K")  # Agregar etiqueta de temperatura
+  mutate(temperatura = "400K")  
 
 # Renombrar columnas
 nombres <- c("tiempo", "temp","temperatura")
 colnames(temp_298) <- nombres
 colnames(temp_400) <- nombres
 
-# Combinar ambos datasets
+# CombinO ambos datasets
 temperatura_total <- bind_rows(temp_298,temp_400)
 
-# Graficar ambas temperaturas en dos paneles separados (uno arriba del otro)
+# GraficO ambas temperaturas en dos paneles separados (uno arriba del otro)
 ggplot(temperatura_total, aes(x = tiempo, y = temp,colour = temperatura)) +
   geom_line(size = 0.1) +
   labs(
@@ -235,17 +280,28 @@ ggplot(temperatura_total, aes(x = tiempo, y = temp,colour = temperatura)) +
     plot.title = element_text(size = 16, face = "bold", color = "darkgreen", hjust = 0.5, margin = margin(b = 30)),
     axis.title = element_text(size = 14, face = "bold", color = "darkred", margin = margin(t = 30, r = 30),hjust = 0.5),
     axis.text = element_text(size = 12),
-    strip.text = element_text(size = 14, face = "bold", color = "white"), # Texto blanco en la etiqueta
-    strip.background = element_rect(fill = "darkgreen"),  # Fondo verde para la etiqueta del panel
+    strip.text = element_text(size = 14, face = "bold", color = "white"), 
+    strip.background = element_rect(fill = "darkgreen"), 
     panel.border = element_rect(color = "darkgreen", fill = NA, size = 1),
-    legend.position = "none"  # Oculta la leyenda ya que cada panel tiene su etiqueta
+    legend.position = "none"  
   ) +
-  scale_color_manual(values = c("298K" = "darkblue", "400K" = "darkred"))  # Definir colores
-
+  scale_color_manual(values = c("298K" = "darkblue", "400K" = "darkred"))  
 
 ```
 
-## Código para evaluar la energía de nuestro sistema a lo largo de la simulacion.
+
+
+
+
+
+
+
+
+
+
+
+
+# Código para evaluar la energía de nuestro sistema a lo largo de la simulacion.
 
 ```{r}
 library(tidyverse)
@@ -257,15 +313,15 @@ ener_298 <- read_table2("simu/298/energy_cinetic.xvg", col_names = FALSE) %>%
 ener_400 <- read_table2("simu/400/energy_cinectic.xvg", col_names = FALSE) %>%
   mutate(temperatura = "400K")  # Agregar etiqueta de temperatura
 
-# Renombrar columnas
+# Renombro columnas
 nombres <- c("tiempo", "energía","temperatura")
 colnames(ener_298) <- nombres
 colnames(ener_400) <- nombres
 
-# Combinar ambos datasets
+# Combino ambos datasets
 energia_total <- bind_rows(ener_298,ener_400)
 
-# Graficar ambas temperaturas en dos paneles separados (uno arriba del otro)
+# Grafico ambas temperaturas en dos paneles separados (uno arriba del otro)
 ggplot(energia_total, aes(x = tiempo, y = energía,colour = temperatura)) +
   geom_line(size = 0.1) +
   labs(
@@ -280,15 +336,22 @@ ggplot(energia_total, aes(x = tiempo, y = energía,colour = temperatura)) +
     plot.title = element_text(size = 16, face = "bold", color = "darkgreen", hjust = 0.5, margin = margin(b = 30)),
     axis.title = element_text(size = 14, face = "bold",color="darkred", margin = margin(t = 30, r = 30), hjust = 0.5),
     axis.text = element_text(size = 12),
-    strip.text = element_text(size = 14, face = "bold", color = "white"), # Texto blanco en la etiqueta
-    strip.background = element_rect(fill = "darkgreen"),  # Fondo verde para la etiqueta del panel
+    strip.text = element_text(size = 14, face = "bold", color = "white"), 
+    strip.background = element_rect(fill = "darkgreen"), 
     panel.border = element_rect(color = "darkgreen", fill = NA, size = 1),
-    legend.position = "none"  # Oculta la leyenda ya que cada panel tiene su etiqueta
+    legend.position = "none"  
   ) +
-  scale_color_manual(values = c("298K" = "darkblue", "400K" = "darkred"))  # Definir colores
+  scale_color_manual(values = c("298K" = "darkblue", "400K" = "darkred"))  
 
 ```
-## Energia total
+
+
+
+
+
+
+
+# Energia total
 
 
 ```{r}
@@ -301,15 +364,15 @@ ener_298 <- read_table2("simu/298/energy-total.xvg", col_names = FALSE) %>%
 ener_400 <- read_table2("simu/400/energy-total.xvg", col_names = FALSE) %>%
   mutate(temperatura = "400K")  # Agregar etiqueta de temperatura
 
-# Renombrar columnas
+# Renombro columnas
 nombres <- c("tiempo", "energía","temperatura")
 colnames(ener_298) <- nombres
 colnames(ener_400) <- nombres
 
-# Combinar ambos datasets
+# Combino ambos datasets
 energia_total <- bind_rows(ener_298,ener_400)
 
-# Graficar ambas temperaturas en dos paneles separados (uno arriba del otro)
+# Grafico ambas temperaturas en dos paneles separados (uno arriba del otro)
 ggplot(energia_total, aes(x = tiempo, y = energía,colour = temperatura)) +
   geom_line(size = 0.1) +
   labs(
@@ -324,45 +387,25 @@ ggplot(energia_total, aes(x = tiempo, y = energía,colour = temperatura)) +
     plot.title = element_text(size = 16, face = "bold", color = "darkgreen", hjust = 0.5, margin = margin(b = 30)),
     axis.title = element_text(size = 14, face = "bold",color="darkred", margin = margin(t = 30, r = 30), hjust = 0.5),
     axis.text = element_text(size = 12),
-    strip.text = element_text(size = 14, face = "bold", color = "white"), # Texto blanco en la etiqueta
-    strip.background = element_rect(fill = "darkgreen"),  # Fondo verde para la etiqueta del panel
+    strip.text = element_text(size = 14, face = "bold", color = "white"), 
+    strip.background = element_rect(fill = "darkgreen"),  
     panel.border = element_rect(color = "darkgreen", fill = NA, size = 1),
-    legend.position = "none"  # Oculta la leyenda ya que cada panel tiene su etiqueta
+    legend.position = "none"  
   ) +
-  scale_color_manual(values = c("298K" = "darkblue", "400K" = "darkred"))  # Definir colores
+  scale_color_manual(values = c("298K" = "darkblue", "400K" = "darkred"))  
 
 ```
 
-## Para medir ángulos de nuestro sistema
 
-📌 1. Ángulo del puente peptídico entre ALA-2 y ASN-3
-Este ángulo mide la flexión del esqueleto del péptido en la unión entre ALA-2 y ASN-3. Es un indicador de la estabilidad de la conformación.
 
-Átomos involucrados:
-🔹 C (ALA-2, carbonilo del esqueleto) → Átomo 15
-🔹 N (ASN-3, unión peptídica) → Átomo 17
-🔹 Cα (ASN-3, carbono central del residuo) → Átomo 19
 
-📌 Ángulo: (15, 17, 19)
 
-🧩 ¿Por qué es interesante?
 
-Nos dice cómo cambia la flexión del enlace peptídico entre ALA y ASN.
-Puede revelar si hay movimientos significativos en la cadena principal en diferentes condiciones de temperatura.
-📌 2. Ángulo de la cadena lateral de ASN-3
-Este ángulo mide la orientación del grupo funcional de la cadena lateral de la asparagina. Puede afectar interacciones con el solvente y la estructura secundaria.
 
-Átomos involucrados:
-🔹 Cα (ASN-3, carbono central del residuo) → Átomo 19
-🔹 Cβ (ASN-3, primer carbono de la cadena lateral) → Átomo 21
-🔹 CG (ASN-3, carbono del grupo amida) → Átomo 24
 
-📌 Ángulo: (19, 21, 24)
 
-🧩 ¿Por qué es interesante?
+# Para medir ángulos de nuestro sistema
 
-La orientación de la cadena lateral de la asparagina es clave en interacciones con agua y enlaces de hidrógeno.
-Cambios en este ángulo pueden indicar reajustes estructurales en respuesta a la temperatura.
 
 ```{r}
 library(tidyverse)
@@ -379,10 +422,10 @@ nombres <- c("tiempo", "ángulo","temperatura")
 colnames(angulo_298) <- nombres
 colnames(angulo_400) <- nombres
 
-# Combinar ambos datasets
+# Combino ambos datasets
 angulos_total <- bind_rows(angulo_298,angulo_400)
 
-# Graficar ambas temperaturas en dos paneles separados (uno arriba del otro)
+# Grafico ambas temperaturas en dos paneles separados (uno arriba del otro)
 ggplot(angulos_total, aes(x = tiempo, y = ángulo,colour = temperatura)) +
   geom_line(size = 0.1) +
   labs(
@@ -390,26 +433,26 @@ ggplot(angulos_total, aes(x = tiempo, y = ángulo,colour = temperatura)) +
     y = "Ángulo Giro (°)",
     title = "Evolución del ángulo de giro ALA-2(C)y ASN-3(Cα y N ) (298K vs 400K)"
   ) +
-  facet_wrap(~ temperatura, ncol = 1,) +  # Divide en dos filas, una por temperatura
+  facet_wrap(~ temperatura, ncol = 1,) +  
   theme_minimal(base_size = 12) +
   theme(
     text = element_text(family = "Arial"),
     plot.title = element_text(size = 12, face = "bold", color = "darkgreen", hjust = 0.5, margin = margin(b = 30)),
     axis.title = element_text(size = 14, face = "bold",margin = margin(t = 30, r = 30),color = "darkred", hjust = 0.5),
     axis.text = element_text(size = 12),
-    strip.text = element_text(size = 14, face = "bold", color = "white"), # Texto blanco en la etiqueta
-    strip.background = element_rect(fill = "darkgreen"),  # Fondo verde para la etiqueta del panel
+    strip.text = element_text(size = 14, face = "bold", color = "white"), 
+    strip.background = element_rect(fill = "darkgreen"),  
     panel.border = element_rect(color = "darkgreen", fill = NA, size = 1),
-    legend.position = "none"  # Oculta la leyenda ya que cada panel tiene su etiqueta
+    legend.position = "none"  
   ) +
-  scale_color_manual(values = c("298K" = "darkblue", "400K" = "darkred"))  # Definir colores
+  scale_color_manual(values = c("298K" = "darkblue", "400K" = "darkred"))  
 
 
 
 
 ggplot(angulos_total, aes(x = temperatura, y = ángulo, fill = temperatura)) +
   geom_boxplot(alpha = 0.5) +
-  scale_fill_manual(values = c("298K" = "darkblue", "400K" = "darkred")) +  # Asignar colores
+  scale_fill_manual(values = c("298K" = "darkblue", "400K" = "darkred")) +  
   labs(
     title = "Distribución ángulos de giro ALA-2(C) y ASN-3(Cα y N)",
     x = "Temperatura",
@@ -421,10 +464,10 @@ ggplot(angulos_total, aes(x = temperatura, y = ángulo, fill = temperatura)) +
     plot.title = element_text(size = 12, face = "bold", color = "darkgreen", hjust = 0.5, margin = margin(b = 30)),
     axis.title = element_text(size = 14, face = "bold",color = "darkred", margin = margin(t = 30, r = 30), hjust = 0.5),
     axis.text = element_text(size = 12),
-    strip.text = element_text(size = 14, face = "bold", color = "white"), # Texto blanco en la etiqueta
-    strip.background = element_rect(fill = "darkgreen"),  # Fondo verde para la etiqueta del panel
+    strip.text = element_text(size = 14, face = "bold", color = "white"),
+    strip.background = element_rect(fill = "darkgreen"),  
     panel.border = element_rect(color = "darkgreen", fill = NA, size = 1),
-    legend.position = "none"  # Oculta la leyenda ya que cada panel tiene su etiqueta
+    legend.position = "none"  
   ) 
 
 
@@ -434,8 +477,7 @@ ggplot(angulos_total, aes(x = temperatura, y = ángulo, fill = temperatura)) +
 
 ```{r}
 
-# 📌 6. Cálculo de la FFT con correcciones
-
+#Este codigo es identico al que utilicé para calcular la transformada de furier de las distanciasº
 # Filtrar datos por temperatura
 angu_298_vals <- angulos_total %>% filter(temperatura == "298K")
 angu_400_vals <- angulos_total %>% filter(temperatura == "400K")
@@ -444,7 +486,7 @@ angu_400_vals <- angulos_total %>% filter(temperatura == "400K")
 fft_298 <- fft(angu_298_vals$ángulo) / length(angu_298_vals$ángulo)  # Normalización
 fft_400 <- fft(angu_400_vals$ángulo) / length(angu_400_vals$ángulo)  # Normalización
 
-# Obtener frecuencias correctas
+
 n_298 <- length(angu_298_vals$tiempo)
 dt_298 <- mean(diff(angu_298_vals$tiempo))
 frecuencias_298 <- seq(0, 1 / (2 * dt_298), length.out = n_298 / 2)
@@ -453,30 +495,30 @@ n_400 <- length(angu_400_vals$tiempo)
 dt_400 <- mean(diff(angu_400_vals$tiempo))
 frecuencias_400 <- seq(0, 1 / (2 * dt_400), length.out = n_400 / 2)
 
-# Obtener la magnitud de la FFT y eliminar el primer valor (pico en frecuencia 0)
+
 magnitud_fft_298 <- Mod(fft_298)[2:(n_298/2)]
 magnitud_fft_400 <- Mod(fft_400)[2:(n_400/2)]
 frecuencias_298 <- frecuencias_298[2:length(frecuencias_298)]
 frecuencias_400 <- frecuencias_400[2:length(frecuencias_400)]
 
-# Ajustar la longitud mínima entre ambas series
+
 min_length <- min(length(frecuencias_298), length(frecuencias_400))
 
-# Recortar los datos a la misma longitud
+
 frecuencias_298 <- frecuencias_298[1:min_length]
 magnitud_fft_298 <- magnitud_fft_298[1:min_length]
 
 frecuencias_400 <- frecuencias_400[1:min_length]
 magnitud_fft_400 <- magnitud_fft_400[1:min_length]
 
-# Crear el tibble asegurando la misma longitud
+
 fft_data <- tibble(
   Frecuencia = c(frecuencias_298, frecuencias_400),
   Amplitud = c(magnitud_fft_298, magnitud_fft_400),
   Temperatura = rep(c("298K", "400K"), each = min_length)
 )
 
-# 📌 7. Gráfico corregido del espectro de frecuencias
+
 ggplot(fft_data, aes(x = Frecuencia, y = Amplitud, color = Temperatura)) +
   geom_line(size = 1, alpha = 0.7) +
   scale_color_manual(values = c("298K" = "blue", "400K" = "red")) +
@@ -497,7 +539,13 @@ ggplot(fft_data, aes(x = Frecuencia, y = Amplitud, color = Temperatura)) +
 ```
 
 
-## Diedros
+
+
+
+
+
+
+# Diedros
 
 ```{r}
 
@@ -515,10 +563,10 @@ nombres <- c("tiempo", "Phi","Psi","temperatura")
 colnames(diedro_298) <- nombres
 colnames(diedro_400) <- nombres
 
-# Combinar ambos datasets
+# Combino ambos datasets
 diedros_total <- bind_rows(diedro_298,diedro_400)
 
-# Graficar ambas temperaturas en dos paneles separados (uno arriba del otro)
+# Grafico ambas temperaturas en dos paneles separados (uno arriba del otro)
 ggplot(diedros_total, aes(x = Phi, y = Psi,colour = temperatura)) +
   geom_point(size = 0.1) +
   labs(
@@ -526,22 +574,29 @@ ggplot(diedros_total, aes(x = Phi, y = Psi,colour = temperatura)) +
     y = "Ángulo Psi(°)",
     title = "Diedros Phi y Psi ASN-3(298K vs 400K)"
   ) +
-  facet_wrap(~ temperatura, ncol = 5,) +  # Divide en dos filas, una por temperatura
+  facet_wrap(~ temperatura, ncol = 5,) +  
   theme_minimal(base_size = 12) +
   theme(
     text = element_text(family = "Arial"),
     plot.title = element_text(size = 16, face = "bold", color = "darkgreen", hjust = 0.5, margin = margin(b = 30)),
     axis.title = element_text(size = 14, face = "bold", margin = margin(t = 30, r = 30), hjust = 0.5),
     axis.text = element_text(size = 12),
-    strip.text = element_text(size = 14, face = "bold", color = "white"), # Texto blanco en la etiqueta
-    strip.background = element_rect(fill = "darkgreen"),  # Fondo verde para la etiqueta del panel
+    strip.text = element_text(size = 14, face = "bold", color = "white"), 
+    strip.background = element_rect(fill = "darkgreen"), 
     panel.border = element_rect(color = "darkgreen", fill = NA, size = 1),
-    legend.position = "none"  # Oculta la leyenda ya que cada panel tiene su etiqueta
+    legend.position = "none"  
   ) +
-  scale_color_manual(values = c("298K" = "darkblue", "400K" = "darkred"))  # Definir colores
+  scale_color_manual(values = c("298K" = "darkblue", "400K" = "darkred"))  
 ```
 
-## rADIO de giro
+
+
+
+
+
+
+
+# Radio de Giro
 
 ```{r}
 library(tidyverse)
@@ -559,10 +614,10 @@ nombres <- c("tiempo", "radio","X","Y","Z","temperatura")
 colnames(giro_298) <- nombres
 colnames(giro_400) <- nombres
 
-# Combinar ambos datasets
+# Combino ambos datasets
 giros_totales <- bind_rows(giro_298,giro_400)
 
-# Graficar ambas temperaturas en dos paneles separados (uno arriba del otro)
+# Grafico ambas temperaturas en dos paneles separados (uno arriba del otro)
 ggplot(giros_totales, aes(x = tiempo, y = radio,colour = temperatura)) +
   geom_line(size = 0.1) +
   labs(
@@ -577,17 +632,17 @@ ggplot(giros_totales, aes(x = tiempo, y = radio,colour = temperatura)) +
     plot.title = element_text(size = 16, face = "bold", color = "darkgreen", hjust = 0.5, margin = margin(b = 30)),
     axis.title = element_text(size = 14, face = "bold",color = "darkred", margin = margin(t = 30, r = 30), hjust = 0.5),
     axis.text = element_text(size = 12),
-    strip.text = element_text(size = 14, face = "bold", color = "white"), # Texto blanco en la etiqueta
-    strip.background = element_rect(fill = "darkgreen"),  # Fondo verde para la etiqueta del panel
+    strip.text = element_text(size = 14, face = "bold", color = "white"), 
+    strip.background = element_rect(fill = "darkgreen"),  
     panel.border = element_rect(color = "darkgreen", fill = NA, size = 1),
-    legend.position = "none"  # Oculta la leyenda ya que cada panel tiene su etiqueta
+    legend.position = "none"  
   ) +
-  scale_color_manual(values = c("298K" = "darkblue", "400K" = "darkred"))  # Definir colores
+  scale_color_manual(values = c("298K" = "darkblue", "400K" = "darkred"))  
 
 
 ggplot(giros_totales, aes(x = temperatura, y = radio, fill = temperatura)) +
   geom_boxplot(alpha = 0.5) +
-  scale_fill_manual(values = c("298K" = "darkblue", "400K" = "darkred")) +  # Asignar colores
+  scale_fill_manual(values = c("298K" = "darkblue", "400K" = "darkred")) + 
   labs(
     title = "Distribución Radio de Giro por temperatura",
     x = "Temperatura(K)",
@@ -599,13 +654,24 @@ ggplot(giros_totales, aes(x = temperatura, y = radio, fill = temperatura)) +
     plot.title = element_text(size = 16, face = "bold", color = "darkgreen", hjust = 0.5, margin = margin(b = 30)),
     axis.title = element_text(size = 14,color = "darkred", face = "bold", margin = margin(t = 30, r = 30), hjust = 0.5),
     axis.text = element_text(size = 12),
-    strip.text = element_text(size = 14, face = "bold", color = "white"), # Texto blanco en la etiqueta
-    strip.background = element_rect(fill = "darkgreen"),  # Fondo verde para la etiqueta del panel
+    strip.text = element_text(size = 14, face = "bold", color = "white"),
+    strip.background = element_rect(fill = "darkgreen"),  
     panel.border = element_rect(color = "darkgreen", fill = NA, size = 1),
-    legend.position = "none"  # Oculta la leyenda ya que cada panel tiene su etiqueta
+    legend.position = "none"  
   ) 
 ```
-## Velocidad de 5 átomos.
+
+
+
+
+
+
+
+
+
+
+
+# Velocidad de 5 átomos.
 
 - N (ASN-3, unión peptídica) → Átomo 17
 - Cα (ASN-3, carbono central del residuo) → Átomo 19
@@ -618,35 +684,34 @@ ggplot(giros_totales, aes(x = temperatura, y = radio, fill = temperatura)) +
 ```{r}
 library(tidyverse)
 
-# 📌 Cargar datos ignorando encabezados
 velo_298 <- read_table2("simu/298/veloc.xvg", col_names = FALSE, comment = "#") %>%
   mutate(Temperatura = "298K")
 
 velo_400 <- read_table2("simu/400/veloc.xvg", col_names = FALSE, comment = "#") %>%
   mutate(Temperatura = "400K")
 
-# 📌 Seleccionar X1 (Tiempo) y las columnas de velocidad de los átomos específicos
+#seleccionamos átomos de interés 
 atomos_interes <- c(15, 17, 19, 21, 24)
 columnas_interes <- c(1, 5 + (atomos_interes - 1) * 4)  # Tiempo + velocidades seleccionadas
 
-# 📌 Extraer y renombrar las columnas en ambos datasets
+# guardamos las columnas de interes en nuevos dataframes
 velo_298_seleccion <- velo_298[, columnas_interes]
 velo_400_seleccion <- velo_400[, columnas_interes]
 
 colnames(velo_298_seleccion) <- c("Tiempo", paste0("Vel_", atomos_interes))
 colnames(velo_400_seleccion) <- c("Tiempo", paste0("Vel_", atomos_interes))
 
-# 📌 Agregar la temperatura como columna
+# Añadimos una etiqueta con la temperatura para poder organizar la representacion
 velo_298_seleccion <- velo_298_seleccion %>%
   mutate(Temperatura = "298K")
 
 velo_400_seleccion <- velo_400_seleccion %>%
   mutate(Temperatura = "400K")
 
-# 📌 Unir los dos DataFrames en un solo DataFrame
+# uno los data frames para plotear a la vez por temperatura
 velo_total <- bind_rows(velo_298_seleccion, velo_400_seleccion)
 
-# 📌 Transformar el DataFrame a formato largo
+#creo el data frame largo combinando ambas temperaturas pero estas tienen la etiqueta
 velo_long <- velo_total %>%
   pivot_longer(cols = starts_with("Vel_"), names_to = "Átomo", values_to = "Velocidad")
 
@@ -682,45 +747,11 @@ ggplot(velo_long, aes(x = Tiempo, y = Velocidad, color = Temperatura)) +
 
 ```
 
-📌 Átomo Vel_15 (C del esqueleto de ALA-2)
-
-No muestra grandes diferencias en velocidad entre 298K y 400K.
-Conclusión: El esqueleto peptídico es relativamente estable frente al aumento de temperatura.
-📌 Átomo Vel_17 (N del enlace peptídico de ASN-3)
-
-Tiene una amplitud similar en ambas temperaturas, aunque 400K muestra más picos.
-Conclusión: La velocidad del nitrógeno en el enlace peptídico no cambia drásticamente, indicando que la estructura del enlace sigue siendo estable.
-📌 Átomo Vel_19 (Cα de ASN-3)
-
-Presenta más fluctuaciones en 400K, con picos más pronunciados.
-Conclusión: El Cα, al ser un centro de flexión en la estructura, gana mayor movilidad a altas temperaturas.
-📌 Átomo Vel_21 (Cβ de ASN-3, primer carbono de la cadena lateral)
-
-Diferencias notorias: La amplitud de las oscilaciones es mucho mayor en 400K.
-Conclusión: La cadena lateral es más flexible a 400K, con mayores cambios en velocidad, lo que puede indicar movimientos de rotación o vibración más intensos.
-📌 Átomo Vel_24 (CG del grupo amida de ASN-3)
-
-La diferencia entre 298K y 400K es la más pronunciada de todas.
-La amplitud de la velocidad en 400K es mucho mayor, con picos que alcanzan valores significativamente más altos que en 298K.
-Conclusión: La movilidad del grupo amida aumenta fuertemente con la temperatura, lo que sugiere que esta región puede estar más sujeta a fluctuaciones conformacionales.
-
-
-
- Los átomos del esqueleto peptídico (Vel_15, Vel_17) son los menos afectados por el aumento de temperatura.
-✔ Los átomos de la cadena lateral (Vel_21, Vel_24) experimentan los mayores cambios en velocidad con la temperatura, lo que indica mayor flexibilidad.
-✔ El aumento de la temperatura provoca mayores oscilaciones en la velocidad, especialmente en las partes más móviles de la molécula (Cβ y CG de la cadena lateral).
-✔ Estos resultados sugieren que la estructura del esqueleto es más rígida, mientras que las cadenas laterales pueden moverse más libremente a temperaturas más altas.
-
-📊 Si quieres profundizar más, podemos hacer análisis de distribución de velocidades o espectros de frecuencia con la FFT. 🚀😊
-
-
 
 # 500 PICOSEGUNDOS
 
 
-
-
-## temperatura histogrma
+# temperatura histogrma
 ```{r}
 library(tidyverse)
 xvg_temp <- read_table2("simu/500/temp.xvg", col_names = FALSE)
@@ -747,22 +778,21 @@ ggplot(data = xvg_temp, aes(x = temperatura)) +
   )
 ```
 
-
+# histogramas velocidad
 ```{r}
 library(tidyverse)
 
-
+#este codigo es identico al de calcular la velocidad de 5 átomos solo que esta vez queremos las componentes de velocidad
 velo_500 <- read_table2("simu/500/veloc.xvg", col_names = FALSE, comment = "#")
 
 
 atomo_interes <- 17  
-
+#planteamos nuevas formulas para calcular las posiciones de las componentes XYZ
 columnas_interes <- c(1,(atomo_interes - 1) * 4 + 2,(atomo_interes - 1) * 4 + 3,(atomo_interes - 1) * 4 + 4) 
 
-# 📌 Extraer las columnas seleccionadas
+
 velo_500_seleccion <- velo_500[, columnas_interes]
 
-# 📌 Renombrar columnas correctamente
 colnames(velo_500_seleccion) <- c("Tiempo", "Vel_17_X", "Vel_17_Y", "Vel_17_Z")
 
 
@@ -792,7 +822,7 @@ ggplot(data = velo_500_seleccion, aes(x = Vel_17_Y)) +
        y = "Frecuencia") +
   theme_void()+
   theme(
-    text = element_text(family = "Arial"),  # Fuente personalizada
+    text = element_text(family = "Arial"),  
     plot.title = element_text(size = 16, face = "bold", color = "darkgreen",hjust = 0.5,margin = margin(b = 30)),
      axis.title = element_text(size = 14, face = "bold", color = "darkred", margin = margin(t = 10, r = 10),hjust = 0.5),
     axis.text = element_text(size = 12,color = "darkgreen"),
@@ -815,108 +845,8 @@ ggplot(data = velo_500_seleccion, aes(x = Vel_17_Z)) +
     panel.border = element_rect(color = "darkgreen", fill = NA, size = 1),
   )
 ```
-📊 Interpretación de los histogramas de velocidad en X, Y y Z para un átomo
 
-Si los tres histogramas (X, Y, Z) muestran distribuciones normales y similares, esto nos indica varios aspectos importantes sobre la dinámica del átomo en la simulación. Veamos por qué analizamos los histogramas de cada componente de velocidad y qué información podemos extraer de ellos. 🚀
-
-🔎 ¿Por qué hacemos histogramas de cada componente de velocidad?
-1️⃣ Para verificar la distribución de las velocidades
-
-Si las tres componentes (X, Y, Z) siguen distribuciones normales, esto sugiere que la dinámica del átomo es isotrópica o equilibrada en todas las direcciones.
-En otras palabras, el movimiento del átomo no está sesgado hacia una dirección en particular.
-2️⃣ Para comparar la amplitud de fluctuaciones en cada dirección
-
-Si los histogramas tienen anchura similar, significa que la variabilidad de la velocidad en las tres direcciones es comparable.
-Si una componente tiene una dispersión mucho mayor, podría indicar movimiento restringido o preferencial en una dirección (por ejemplo, debido a interacciones con otros átomos).
-3️⃣ Para evaluar la termalización del sistema
-
-En sistemas en equilibrio térmico, se espera que las velocidades sigan una distribución normal en cada dirección.
-Si las distribuciones son similares y centradas en cero, indica que el sistema está bien equilibrado térmicamente.
-4️⃣ Para detectar efectos direccionales en el movimiento
-
-Si las distribuciones son muy diferentes entre X, Y y Z, podría sugerir restricciones estructurales en la dinámica del átomo, como:
-Presencia de enlaces rígidos en ciertas direcciones.
-Influencia de campos eléctricos, barreras de energía o confinamiento espacial.
-📌 ¿Qué significa si los histogramas de X, Y y Z son similares y normales?
-✅ El sistema está bien equilibrado térmicamente (sin sesgo en ninguna dirección).
-✅ No hay restricciones fuertes en el movimiento del átomo (se mueve libremente en todas direcciones).
-✅ El átomo no está atrapado en una estructura rígida ni bajo influencia de fuerzas externas anisotrópicas.
-✅ El sistema ha alcanzado una distribución esperada según la mecánica estadística.
-
-🚀 Conclusión
-✔ Si los histogramas son similares y normales, significa que el átomo se comporta de forma balanceada y libre en el sistema.
-✔ Si hubieran diferencias notables entre ellos, podríamos investigar restricciones estructurales o fuerzas externas que afecten el movimiento del átomo en ciertas direcciones.
-
-📌 Si quieres hacer una prueba extra, podemos calcular la distribución de Maxwell-Boltzmann y compararla con estos histogramas.
-
-
-Qué podemos interpretar de estos histogramas?
-1️⃣ Las velocidades en X, Y y Z están distribuidas de manera similar
-
-Esto sugiere que el movimiento del átomo no está restringido a una sola dirección, sino que se distribuye de manera equilibrada en las tres dimensiones.
-La distribución es gaussiana, lo cual es característico de sistemas en equilibrio térmico.
-2️⃣ El valor medio es cercano a cero en cada dirección
-
-Esto es lo esperado en un sistema bien equilibrado, donde no hay un movimiento preferente en ninguna dirección.
-Significa que el átomo se mueve en todas las direcciones con la misma probabilidad y no hay un sesgo hacia ningún eje en particular.
-3️⃣ La dispersión de las velocidades es similar en cada eje
-
-Si los histogramas fueran muy diferentes entre sí, significaría que hay restricciones o interacciones direccionales.
-En tu caso, la dispersión es similar, lo que indica que el átomo se mueve libremente en las tres dimensiones.
-📌 Relación con la distribución de Maxwell-Boltzmann
-✅ Las componentes 
-𝑣
-𝑥
-,
-𝑣
-𝑦
-,
-𝑣
-𝑧
-v 
-x
-​
- ,v 
-y
-​
- ,v 
-z
-​
-  siguen distribuciones normales (gaussianas).
-✅ Si combinamos estas tres componentes y calculamos la rapidez 
-𝑣
-=
-𝑣
-𝑥
-2
-+
-𝑣
-𝑦
-2
-+
-𝑣
-𝑧
-2
-v= 
-v 
-x
-2
-​
- +v 
-y
-2
-​
- +v 
-z
-2
-​
- 
-​
- , la distribución resultante seguirá la distribución de Maxwell-Boltzmann.
-✅ Si quieres hacer un análisis más profundo, podemos calcular la distribución de la rapidez y compararla con la predicción teórica de Maxwell-Boltzmann. 🚀
-
-
-## RAMACHANDRAN 
+# RAMACHANDRAN 
 ASN-3
 ALA-4
 ALA-2
@@ -927,16 +857,16 @@ ALA-2
 library(tidyverse)
 library(ggplot2)
 
-# 📌 Cargar los datos de Phi y Psi desde GROMACS
+
 rama_data1 <- read_table2("simu/500/asn-3.dat", col_names = FALSE, comment = "#")
 
-# 📌 Renombrar columnas (suponiendo que el archivo tiene: Tiempo, Phi, Psi)
+#RENOMBRO COLUMNAS
 colnames(rama_data1) <- c("Tiempo", "Phi", "Psi")
 
-# 📊 **1️⃣ Diagrama de Ramachandran con histograma 2D (geom_bin2d)**
+# Diagrama de Ramachandran con histograma geom_bin2d
 ggplot(rama_data1, aes(x = Phi, y = Psi)) +
   geom_bin2d(bins = 250) +  # Aumentamos el número de bins para mejor resolución
-  scale_fill_gradient(low = "lightblue", high = "darkred", name = "Frecuencia") +  # Mejor escala de colores
+  scale_fill_gradient(low = "lightblue", high = "darkred", name = "Frecuencia") +  
   labs(
     title = "Diagrama de Ramachandran ASN-3",
     x = "Ángulo Phi (°)",
@@ -955,66 +885,8 @@ ggplot(rama_data1, aes(x = Phi, y = Psi)) +
 
 ```
 
-```{r}
-library(tidyverse)
-library(ggplot2)
 
-# 📌 Cargar los datos de Phi y Psi desde GROMACS
-rama_data2 <- read_table2("simu/500/asn-3.dat", col_names = FALSE, comment = "#")
 
-# 📌 Renombrar columnas (suponiendo que el archivo tiene: Tiempo, Phi, Psi)
-colnames(rama_data2) <- c("Tiempo", "Phi", "Psi")
 
-# 📊 **1️⃣ Diagrama de Ramachandran con histograma 2D (geom_bin2d)**
-ggplot(rama_data2, aes(x = Phi, y = Psi)) +
-  geom_bin2d(bins = 250) +  # Aumentamos el número de bins para mejor resolución
-  scale_fill_gradient(low = "lightblue", high = "darkred", name = "Frecuencia") +  # Mejor escala de colores
-  labs(
-    title = "Diagrama de Ramachandran ASN-3",
-    x = "Ángulo Phi (°)",
-    y = "Ángulo Psi (°)"
-  ) +
-  theme_minimal() +
-  theme(
-    text = element_text(family = "Arial"),
-    plot.title = element_text(size = 16, face = "bold", color = "darkgreen", hjust = 0.5, margin = margin(b = 30)),
-    axis.title = element_text(size = 14, face = "bold", color = "darkred", margin = margin(t = 30, r = 30), hjust = 0.5),
-    axis.text = element_text(size = 12, color = "darkgreen"),
-    legend.title = element_text(size = 12, face = "bold", color = "darkred"),
-    legend.text = element_text(size = 10, color = "black")
-  )
-
-```
-
-```{r}
-library(tidyverse)
-library(ggplot2)
-
-# 📌 Cargar los datos de Phi y Psi desde GROMACS
-rama_data3 <- read_table2("simu/500/ala-4.dat", col_names = FALSE, comment = "#")
-
-# 📌 Renombrar columnas (suponiendo que el archivo tiene: Tiempo, Phi, Psi)
-colnames(rama_data3) <- c("Tiempo", "Phi", "Psi")
-
-# 📊 **1️⃣ Diagrama de Ramachandran con histograma 2D (geom_bin2d)**
-ggplot(rama_data3, aes(x = Phi, y = Psi)) +
-  geom_bin2d(bins = 250) +  # Aumentamos el número de bins para mejor resolución
-  scale_fill_gradient(low = "lightblue", high = "darkred", name = "Frecuencia") +  # Mejor escala de colores
-  labs(
-    title = "Diagrama de Ramachandran ALA-4",
-    x = "Ángulo Phi (°)",
-    y = "Ángulo Psi (°)"
-  ) +
-  theme_minimal() +
-  theme(
-    text = element_text(family = "Arial"),
-    plot.title = element_text(size = 16, face = "bold", color = "darkgreen", hjust = 0.5, margin = margin(b = 30)),
-    axis.title = element_text(size = 14, face = "bold", color = "darkred", margin = margin(t = 30, r = 30), hjust = 0.5),
-    axis.text = element_text(size = 12, color = "darkgreen"),
-    legend.title = element_text(size = 12, face = "bold", color = "darkred"),
-    legend.text = element_text(size = 10, color = "black")
-  )
-
-```
 
 
